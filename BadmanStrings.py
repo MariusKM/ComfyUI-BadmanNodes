@@ -8,7 +8,7 @@ class BadmanPrint:
     @classmethod
     def INPUT_TYPES(s):
         return {
-            "required": {"value": ("STRING", {"default": ""})},
+            "required": {"value": ("STRING", {"multiline": True,"default": ""})},
         }
     
     RETURN_TYPES = ()
@@ -29,11 +29,11 @@ class ConcatString:
         return {
              "required": {
                 "string_field_0": ("STRING", {
-                    "multiline": False,
+                    "multiline": True,
                     "default": "Hello"
                 }),
                 "string_field_1": ("STRING", {
-                    "multiline": False,
+                    "multiline": True,
                     "default": "World"
                 }),
                 "newline": ("BOOLEAN",),
@@ -81,7 +81,7 @@ class BadmanString:
     @classmethod
     def INPUT_TYPES(s):
         return {
-            "required": {"value": ("STRING", {"default": ""})},
+            "required": {"value": ("STRING", {"multiline": True,"default": ""})},
         }
 
     RETURN_TYPES = ("STRING",)
