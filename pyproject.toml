@@ -12,3 +12,4 @@ Repository = "https://github.com/MariusKM/ComfyUI-BadmanNodes"
 PublisherId = "bigting"
 DisplayName = "ComfyUI-BadmanNodes"
 Icon = ""
+#adding stuff to trigger action
