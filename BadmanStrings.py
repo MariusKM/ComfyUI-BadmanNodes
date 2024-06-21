@@ -36,6 +36,7 @@ class ConcatString:
                     "multiline": False,
                     "default": "World"
                 }),
+                "newline": ("BOOLEAN",),
             },
         }
 
@@ -44,8 +45,36 @@ class ConcatString:
     FUNCTION = "execute"
     CATEGORY = "Badman"
 
-    def execute(self, string_field_0, string_field_1):
-        return (string_field_0 + string_field_1,)
+    def execute(self, string_field_0, string_field_1,newline):
+        if newline:
+            return (string_field_0 +"\n"+string_field_1,)
+        else:
+            return (string_field_0 + string_field_1,)
+class SelectString:
+    def __init__(self):
+        pass
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+             "required": {
+                "string_List": ("STRING", {
+                    
+                }),
+                "Index": ("INT", {
+                    "default": 0,
+                    "min": 0}),
+            },
+        }
+    INPUT_IS_LIST = True
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("STRING",)
+    FUNCTION = "execute"
+    CATEGORY = "Badman"
+
+    def execute(self,string_List ,Index ):
+       
+        return (string_List[Index[0]],)
 
 class BadmanString:
 
