@@ -131,3 +131,71 @@ class HexGenerator:
         return (color_int,)
 
 
+import torch
+import math
+import random
+import time
+
+class RandomColorImageGrid:
+    def __init__(self, device="cpu"):
+        self.device = device
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "width": ("INT", {"default": 1024, "min": 1}),
+                "height": ("INT", {"default": 1024, "min": 1}),
+                "batch_size": ("INT", {"default": 1, "min": 1, "max": 4096}),
+                "num_colors": ("INT", {"default": 4, "min": 1}),
+            }
+        }
+
+    RETURN_TYPES = ("IMAGE",)
+    FUNCTION = "generate"
+
+    CATEGORY = "image"
+
+    def generate(self, width, height, batch_size=1, num_colors=4):
+        # Seed the random number generator uniquely for each call
+        random.seed(time.time() + random.randint(0, 10000))
+
+        # Calculate rows and columns based on number of colors
+        rows = math.ceil(math.sqrt(num_colors))
+        cols = math.ceil(num_colors / rows)
+
+        tile_width = width // cols
+        tile_height = height // rows
+
+        # Create tensors for the R, G, B channels
+        images = []
+        for _ in range(batch_size):
+            r = torch.zeros([height, width], dtype=torch.float32, device=self.device)
+            g = torch.zeros([height, width], dtype=torch.float32, device=self.device)
+            b = torch.zeros([height, width], dtype=torch.float32, device=self.device)
+
+            # Generate random colors and fill the tiles
+            color_idx = 0
+            for i in range(rows):
+                for j in range(cols):
+                    if color_idx >= num_colors:
+                        break
+                    color_r = random.randint(0, 255) / 255.0
+                    color_g = random.randint(0, 255) / 255.0
+                    color_b = random.randint(0, 255) / 255.0
+
+                    x_start, x_end = j * tile_width, (j + 1) * tile_width
+                    y_start, y_end = i * tile_height, (i + 1) * tile_height
+
+                    r[y_start:y_end, x_start:x_end] = color_r
+                    g[y_start:y_end, x_start:x_end] = color_g
+                    b[y_start:y_end, x_start:x_end] = color_b
+
+                    color_idx += 1
+
+            # Concatenate the R, G, B channels along the last dimension
+            image = torch.stack([r, g, b], dim=-1)
+            images.append(image)
+
+        # Return the batch of images
+        return (torch.stack(images),)
