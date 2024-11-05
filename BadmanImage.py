@@ -3,7 +3,7 @@ import torch
 import torch.nn.functional as F
 from PIL import Image
 import math
-
+import torchvision.transforms.functional as Ft
 import comfy.utils
 import comfy.model_management
 
@@ -168,8 +168,8 @@ class Brightness:
 
         img = image.clone()
         img = permute_tt(img)
-        img = F.adjust_brightness(img * mask, brightness)
-        img = img + permute_tt(image) * F.invert(mask)
+        img = Ft.adjust_brightness(img * mask, brightness)
+        img = img + permute_tt(image) * Ft.invert(mask)
         img = permute_ft(img)
 
         return (img,)
