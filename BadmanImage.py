@@ -129,7 +129,53 @@ class HexGenerator:
         # Combine into a single integer
         color_int = (r_int << 16) + (g_int << 8) + b_int
         return (color_int,)
+    
+# Taken from Yancs Node pack https://github.com/ALatentPlace/ComfyUI_yanc
+def permute_tt(image):
+    return image.permute(0, 3, 1, 2)
 
+def permute_ft(image):
+    return image.permute(0, 2, 3, 1)
+
+class Brightness:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required":
+                {
+                    "image": ("IMAGE",),
+                    "brightness": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.01}),
+                },
+                "optional":
+                {
+                    "mask_opt": ("MASK",),
+                }
+                }
+
+    CATEGORY = "Badman"
+
+    RETURN_TYPES = ("IMAGE",)
+    RETURN_NAMES = ("image",)
+    FUNCTION = "do_it"
+
+    def do_it(self, image, brightness, mask_opt=None):
+
+        if mask_opt is not None:
+            mask = mask_opt.clone()
+            mask = permute_tt(mask.unsqueeze(-1))
+        else:
+            mask = torch.ones_like(image)
+            mask = permute_tt(mask)
+
+        img = image.clone()
+        img = permute_tt(img)
+        img = F.adjust_brightness(img * mask, brightness)
+        img = img + permute_tt(image) * F.invert(mask)
+        img = permute_ft(img)
+
+        return (img,)
+
+
+# ------------------------------------------------------------------------------------------------------------------ #
 
 import torch
 import math

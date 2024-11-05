@@ -17,6 +17,7 @@ NODE_CLASS_MAPPINGS = {
     "BadmanIntUtil" : BadmanIntUtil,
     "BadmanCLIPTextEncodeSDXLRegion" : BadmanCLIPTextEncodeSDXLRegion,
     "BadmanStringSelect" : SelectString,
+    "BadmanBrightness" : Brightness,
     
 }
 
@@ -31,4 +32,5 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "Badman_IO": "IO Config (Badman)",
     "BadmanIntUtil": "Int Math (Badman)",
     "BadmanStringSelect": "Select String from List (Badman)",
+    "BadmanBrightness" : "Image Brightness Adjust (Badman)",
 }
