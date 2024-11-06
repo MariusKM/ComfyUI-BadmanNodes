@@ -5,13 +5,14 @@ import re
 import os
 import datetime
 import json
+import folder_paths
 
-base_path = os.path.dirname(os.path.realpath(__file__))
+
 
 def find_and_replace_wildcards(prompt, offset_seed, debug=False):
     # wildcards use the __file_name__ syntax with optional |word_to_find
-    input_path = os.path.join(base_path, 'input')
-    wildcard_path = os.path.join(input_path, 'wildcards')
+    wildcard_path = os.path.join(folder_paths.input_directory, 'wildcards')
+    print(wildcard_path)
     wildcard_regex = r'((\d+)\$\$)?__(!|\+|-|\*)?((?:[^|_]+_)*[^|_]+)((?:\|[^|]+)*)__'
     # r'(\[(\d+)\$\$)?__((?:[^|_]+_)*[^|_]+)((?:\|[^|]+)*)__\]?'
     match_strings = []
