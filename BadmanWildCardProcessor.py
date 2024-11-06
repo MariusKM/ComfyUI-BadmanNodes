@@ -278,7 +278,7 @@ class BadmanWildCardProcessor:
 
     RETURN_TYPES = ('STRING',)
     FUNCTION = 'process'
-    CATEGORY = 'Mikey/Text'
+    CATEGORY = 'Badman'
 
     def process(self, prompt, seed, prompt_=None, extra_pnginfo=None):
         if prompt_ is None:
