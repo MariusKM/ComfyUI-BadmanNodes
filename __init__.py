@@ -3,6 +3,7 @@ from .BadmanImage import *
 from .BadmanNumbers import * 
 from .BadmanConditioning import *
 from .BadmanColorTransfer import *
+from .BadmanWildCardProcessor import *
 
 
 NODE_CLASS_MAPPINGS = {
@@ -18,7 +19,7 @@ NODE_CLASS_MAPPINGS = {
     "BadmanCLIPTextEncodeSDXLRegion" : BadmanCLIPTextEncodeSDXLRegion,
     "BadmanStringSelect" : SelectString,
     "BadmanBrightness" : Brightness,
-    
+    "BadmanWildCardProcessor" : BadmanWildCardProcessor,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -33,4 +34,5 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "BadmanIntUtil": "Int Math (Badman)",
     "BadmanStringSelect": "Select String from List (Badman)",
     "BadmanBrightness" : "Image Brightness Adjust (Badman)",
+    "BadmanWildCardProcessor" : "Wildcard Processor (Badman)",
 }
