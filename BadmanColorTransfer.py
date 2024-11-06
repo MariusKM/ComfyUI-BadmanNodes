@@ -15,8 +15,10 @@ class LabColorTransferNode:
         return {
             "required": {
                 "input_image": ("IMAGE",),
-                "hex_color": ("INT",),  # Expecting a color input in hexadecimal integer format
-            }
+                "hex_color": ("INT", {
+                    "default": 0,
+                    "min": 0}),  # Expecting a color input in hexadecimal integer format
+            },
         }
 
     RETURN_TYPES = ("IMAGE",)
