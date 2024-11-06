@@ -269,7 +269,7 @@ def process_random_syntax(text, seed):
 
 
 
-class WildcardProcessor:
+class BadmanWildCardProcessor:
     @classmethod
     def INPUT_TYPES(s):
         return {"required": {"prompt": ("STRING", {"multiline": True, "placeholder": "Prompt Text"}),
