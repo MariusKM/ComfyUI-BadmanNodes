@@ -1,14 +1,131 @@
 import numpy as np
 import torch
 import torch.nn.functional as F
+import torchvision.transforms.v2 as T
 from PIL import Image
 import math
 import torchvision.transforms.functional as Ft
 import comfy.utils
 import comfy.model_management
+import copy
+import cv2
 
 
+#Code for the following two nodes taken from https://github.com/cubiq/ComfyUI_essentials.git
+class ImageDesaturate:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "image": ("IMAGE",),
+                "factor": ("FLOAT", { "default": 1.00, "min": 0.00, "max": 1.00, "step": 0.05, }),
+                "method": (["luminance (Rec.709)", "luminance (Rec.601)", "average", "lightness"],),
+            }
+        }
 
+    RETURN_TYPES = ("IMAGE",)
+    FUNCTION = "execute"
+    CATEGORY = "Badman"
+
+    def execute(self, image, factor, method):
+        if method == "luminance (Rec.709)":
+            grayscale = 0.2126 * image[..., 0] + 0.7152 * image[..., 1] + 0.0722 * image[..., 2]
+        elif method == "luminance (Rec.601)":
+            grayscale = 0.299 * image[..., 0] + 0.587 * image[..., 1] + 0.114 * image[..., 2]
+        elif method == "average":
+            grayscale = image.mean(dim=3)
+        elif method == "lightness":
+            grayscale = (torch.max(image, dim=3)[0] + torch.min(image, dim=3)[0]) / 2
+
+        grayscale = (1.0 - factor) * image + factor * grayscale.unsqueeze(-1).repeat(1, 1, 1, 3)
+        grayscale = torch.clamp(grayscale, 0, 1)
+
+        return(grayscale,)
+
+class MaskBlur:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "mask": ("MASK",),
+                "amount": ("INT", { "default": 6, "min": 0, "max": 256, "step": 1, }),
+                "device": (["auto", "cpu", "gpu"],),
+            }
+        }
+
+    RETURN_TYPES = ("MASK",)
+    FUNCTION = "execute"
+    CATEGORY = "Badman"
+
+    def execute(self, mask, amount, device):
+        if amount == 0:
+            return (mask,)
+
+        if "gpu" == device:
+            mask = mask.to(comfy.model_management.get_torch_device())
+        elif "cpu" == device:
+            mask = mask.to('cpu')
+
+        if amount % 2 == 0:
+            amount+= 1
+
+        if mask.dim() == 2:
+            mask = mask.unsqueeze(0)
+
+        mask = T.functional.gaussian_blur(mask.unsqueeze(1), amount).squeeze(1)
+
+        if "gpu" == device or "cpu" == device:
+            mask = mask.to(comfy.model_management.intermediate_device())
+
+        return(mask,)
+
+
+class DilateErodeMask:
+    def __init__(self):
+        pass
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "masks": ("MASK",),
+                "radius": ("INT", {
+                    "default": 0,
+                    "min": -1023,
+                    "max": 1023,
+                    "step": 1
+                }),
+                "shape": (["box", "circle"],),
+            },
+        }
+
+    RETURN_TYPES = ("MASK",)
+    FUNCTION = "dilate_mask"
+
+    CATEGORY = "Badman"
+
+    def dilate_mask(self, masks, radius, shape):
+        
+        if radius == 0:
+            return (masks,)
+        
+        s = abs(radius)
+        d = s * 2 + 1
+        k = np.zeros((d, d), np.uint8)
+        if shape == "circle":
+            k = cv2.circle(k, (s,s), s, 1, -1)
+        else:
+            k += 1
+        
+        dup = copy.deepcopy(masks.cpu().numpy())
+        
+        for index, mask in enumerate(dup):
+            if radius > 0:
+                dup[index] = cv2.dilate(mask, k, iterations=1)
+            else:
+                dup[index] = cv2.erode(mask, k, iterations=1)
+        
+        return (torch.from_numpy(dup),)
 
 class Blend:
     def __init__(self):

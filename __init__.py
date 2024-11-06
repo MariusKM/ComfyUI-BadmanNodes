@@ -20,6 +20,10 @@ NODE_CLASS_MAPPINGS = {
     "BadmanStringSelect" : SelectString,
     "BadmanBrightness" : Brightness,
     "BadmanWildCardProcessor" : BadmanWildCardProcessor,
+    "BadmanDesaturate" : ImageDesaturate,
+    "BadmanMaskBlur" : MaskBlur,
+    "BadmanDilateErodeMask" : DilateErodeMask,
+    "BadmanStringToInteger" : StringToInteger,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -35,4 +39,8 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "BadmanStringSelect": "Select String from List (Badman)",
     "BadmanBrightness" : "Image Brightness Adjust (Badman)",
     "BadmanWildCardProcessor" : "Wildcard Processor (Badman)",
+    "BadmanDesaturate" : "Image Desaturate (Badman)",
+    "BadmanMaskBlur" : "Mask Blur (Badman)",
+    "BadmanDilateErodeMask" : "Dilate Erode Mask (Badman)",
+    "BadmanStringToInteger" : "StringToInteger (Badman)",
 }

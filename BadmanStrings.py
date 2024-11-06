@@ -129,5 +129,23 @@ class BadmanIOConfigurator:
        
         return (imagesOutPath,videoOutPath,imagesUpresOutPath,videoUpresOutPath,framesInPath,depthInPath,poseInPath,BodyMaskInPath,FaceMaskInPath)
        
+class StringToInteger:
 
+    def __init__(self):
+        pass
+    
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {"value": ("STRING", {"default": ""})},
+        }
+    
+    RETURN_TYPES = ("INT",)
+    RETURN_NAMES = ("INT",)
+    OUTPUT_NODE = True
+    FUNCTION = "execute"
+    CATEGORY = "Badman"
 
+    def execute(self, value):
+        return (int(value),)
+   
