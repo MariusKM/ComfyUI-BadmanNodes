@@ -4,3 +4,4 @@ opencv_python_headless
 Pillow
 torch
 torchvision
+scikit-image
