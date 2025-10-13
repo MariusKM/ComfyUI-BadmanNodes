@@ -117,10 +117,10 @@ class BadmanIOConfigurator:
 
     def execute(self, BasePath,ShotName):
         suffixOut = BasePath+ShotName
-        imagesOutPath = suffixOut+"\Images\image"
-        videoOutPath = suffixOut+"\Video"
-        imagesUpresOutPath = suffixOut+"\ImagesUpres\image"
-        videoUpresOutPath = suffixOut+ "\VideoUpres"
+        imagesOutPath = suffixOut+"\\Images\\image"
+        videoOutPath = suffixOut+"\\Video"
+        imagesUpresOutPath = suffixOut+"\\ImagesUpres\\image"
+        videoUpresOutPath = suffixOut+ "\\VideoUpres"
         framesInPath = BasePath+"ExtractedFrames\\"+ShotName+"\\"
         depthInPath = BasePath+"ExtractedFrames\\"+ShotName+"\\"
         poseInPath = BasePath+"ExtractedPose\\"+ShotName+"\\"
