@@ -1,7 +1,7 @@
 [project]
 name = "comfyui-badmannodes"
 description = "Nodes:Badman_Blend, Badman_HexGenerator, Badman_String, Badman_Concat_String, Badman_Print, BadmanIO, BadmanIntUtil"
-version = "1.0.0"
+version = "1.0.1"
 license = "LICENSE"
 
 [project.urls]

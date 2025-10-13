@@ -4,6 +4,7 @@ from .BadmanNumbers import *
 from .BadmanConditioning import *
 from .BadmanColorTransfer import *
 from .BadmanWildCardProcessor import *
+from .BadmanLatentNoiseMask import *
 
 
 NODE_CLASS_MAPPINGS = {
@@ -24,6 +25,7 @@ NODE_CLASS_MAPPINGS = {
     "BadmanMaskBlur" : MaskBlur,
     "BadmanDilateErodeMask" : DilateErodeMask,
     "BadmanStringToInteger" : StringToInteger,
+    "BadmanInjectLatentNoiseMasked" : InjectLatentNoiseMasked,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -43,4 +45,5 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "BadmanMaskBlur" : "Mask Blur (Badman)",
     "BadmanDilateErodeMask" : "Dilate Erode Mask (Badman)",
     "BadmanStringToInteger" : "StringToInteger (Badman)",
+    "BadmanInjectLatentNoiseMasked" : "Inject Latent Noise Masked (Badman)",
 }

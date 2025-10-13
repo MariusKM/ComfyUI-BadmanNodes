@@ -24,6 +24,8 @@ interrogation
 
 **Select String from List (Badman)**: Selects a specific String from a String List output and forwards this to the output. Can be used to target a specific String when loading prompts from files or from a multi image BLIP interrogator.
 
+**Inject Latent Noise Masked (Badman)**: Injects noise into latent space with mask control. High mask values receive more noise, low values receive less. Supports multiple blend modes (replace, add, multiply).
+
 
 ## TODO
 
