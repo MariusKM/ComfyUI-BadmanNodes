@@ -84,11 +84,12 @@ class WanThreeFrameToVideo:
                 "clip_vision_start_image": ("CLIP_VISION_OUTPUT", ),
                 "clip_vision_middle_image": ("CLIP_VISION_OUTPUT", ),
                 "clip_vision_end_image": ("CLIP_VISION_OUTPUT", ),
+                "debug_show_mask": ("BOOLEAN", {"default": False, "tooltip": "Output debug visualization showing mask as white overlay"}),
             }
         }
 
-    RETURN_TYPES = ("CONDITIONING", "CONDITIONING", "LATENT")
-    RETURN_NAMES = ("positive", "negative", "latent")
+    RETURN_TYPES = ("CONDITIONING", "CONDITIONING", "LATENT", "IMAGE")
+    RETURN_NAMES = ("positive", "negative", "latent", "debug_mask_visualization")
     FUNCTION = "execute"
     CATEGORY = "conditioning/video_models"
 
@@ -96,7 +97,7 @@ class WanThreeFrameToVideo:
                 middle_frame_position, frame_blend_width,
                 start_image=None, middle_image=None, end_image=None, 
                 clip_vision_start_image=None, clip_vision_middle_image=None, 
-                clip_vision_end_image=None):
+                clip_vision_end_image=None, debug_show_mask=False):
         
         spacial_scale = vae.spacial_compression_encode()
         latent = torch.zeros(
@@ -107,7 +108,11 @@ class WanThreeFrameToVideo:
         
         # Initialize image with neutral gray and full mask (model will inpaint)
         image = torch.ones((length, height, width, 3)) * 0.5
-        mask = torch.ones((1, 1, latent.shape[2] * 4, latent.shape[-2], latent.shape[-1]))
+        # Create mask in latent frame space (4 frames per latent frame)
+        # This may be slightly longer than actual length for padding
+        latent_frames = latent.shape[2]
+        mask_temporal_dim = latent_frames * 4
+        mask = torch.ones((1, 1, mask_temporal_dim, latent.shape[-2], latent.shape[-1]))
         
         # Upscale images to target resolution
         if start_image is not None:
@@ -137,14 +142,13 @@ class WanThreeFrameToVideo:
             # Copy the actual frames we have
             image[:actual_frames] = start_image[:actual_frames]
             
-            # If we have fewer frames than blend width, repeat the last frame for blending
+            # If we have fewer frames than blend width, repeat the last frame
             if actual_frames < blend_region_end:
                 image[actual_frames:blend_region_end] = start_image[actual_frames-1:actual_frames].expand(blend_region_end - actual_frames, -1, -1, -1)
             
-            # Create gradient mask: 0.0 (preserve) at keyframe → 1.0 (generate) at blend edge
-            for i in range(blend_region_end):
-                blend_factor = i / max(blend_region_end - 1, 1)  # 0.0 to 1.0
-                mask[:, :, i] = blend_factor
+            # Binary mask: 0.0 for keyframe region (use provided image)
+            # Context window fusion will handle smooth blending at overlaps
+            mask[:, :, :blend_region_end + 3] = 0.0
         
         # Middle frame
         if middle_image is not None:
@@ -157,15 +161,13 @@ class WanThreeFrameToVideo:
             center_offset = (blend_region_len - actual_frames) // 2
             image[middle_start + center_offset:middle_start + center_offset + actual_frames] = middle_image[:actual_frames]
             
-            # If single frame, repeat it across blend region for smooth blending
+            # If single frame, repeat it across blend region
             if actual_frames == 1:
                 image[middle_start:middle_end] = middle_image[0:1].expand(blend_region_len, -1, -1, -1)
             
-            # Create V-shaped gradient mask: 1.0 at edges → 0.0 at center → 1.0 at edges
-            for i in range(blend_region_len):
-                distance_from_center = abs(i - blend_region_len // 2)
-                blend_factor = distance_from_center / max(blend_region_len // 2, 1)  # 0.0 at center, 1.0 at edges
-                mask[:, :, middle_start + i] = min(mask[:, :, middle_start + i].item(), blend_factor)
+            # Binary mask: 0.0 for middle keyframe region (use provided image)
+            # Context window fusion will handle smooth blending at overlaps
+            mask[:, :, middle_start:min(middle_end + 3, mask_temporal_dim)] = 0.0
         
         # End frame at end
         if end_image is not None:
@@ -181,13 +183,15 @@ class WanThreeFrameToVideo:
                 # Multiple frames: use the last ones
                 image[length - actual_frames:length] = end_image[-actual_frames:]
             
-            # Create gradient mask: 1.0 (generate) at blend start → 0.0 (preserve) at keyframe
-            for i in range(blend_region_len):
-                blend_factor = 1.0 - (i / max(blend_region_len - 1, 1))  # 1.0 to 0.0
-                mask[:, :, end_start + i] = min(mask[:, :, end_start + i].item(), blend_factor)
+            # Binary mask: 0.0 for end keyframe region (use provided image)
+            # Context window fusion will handle smooth blending at overlaps
+            mask[:, :, end_start:min(length, mask_temporal_dim)] = 0.0
         
         # Encode image to latent space
         concat_latent_image = vae.encode(image[:, :, :, :3])
+        
+        # Save mask before reshape for debug visualization
+        mask_before_reshape = mask.clone()
         
         # Reshape mask to match latent dimensions with proper 4D structure for temporal processing
         # mask goes from (1, 1, T*4, H, W) -> (1, T, 4, H, W) -> (1, 4, T, H, W)
@@ -240,7 +244,32 @@ class WanThreeFrameToVideo:
                 negative, {"clip_vision_output": clip_vision_output}
             )
         
+        # Create debug visualization if requested
+        debug_image = None
+        if debug_show_mask:
+            # Only use the first 'length' frames from the mask (ignore padding)
+            mask_for_viz = mask_before_reshape[:, :, :length, :, :]
+            
+            # Upsample mask from latent resolution to image resolution
+            # mask_for_viz shape: (1, 1, length, latent_h, latent_w)
+            mask_upsampled = torch.nn.functional.interpolate(
+                mask_for_viz.squeeze(1),  # (1, length, latent_h, latent_w)
+                size=(height, width),
+                mode='nearest'
+            )  # (1, length, height, width)
+            
+            # Rearrange to (length, height, width, 1) and expand to RGB
+            mask_viz = mask_upsampled.permute(1, 2, 3, 0).expand(-1, -1, -1, 3)  # (length, height, width, 3)
+            
+            # Blend: white overlay based on mask strength
+            # mask=0.0 (no white, show original), mask=1.0 (full white, fully masked)
+            white = torch.ones_like(image)
+            debug_image = image * (1 - mask_viz) + white * mask_viz
+        else:
+            # Return empty image if debug not enabled
+            debug_image = torch.zeros((1, 64, 64, 3))
+        
         # Return latent
         out_latent = {}
         out_latent["samples"] = latent
-        return (positive, negative, out_latent)
+        return (positive, negative, out_latent, debug_image)
