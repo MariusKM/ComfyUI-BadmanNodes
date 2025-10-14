@@ -142,17 +142,17 @@ class WanThreeFrameToVideo:
             middle_img_len = min(middle_image.shape[0], middle_end - middle_start)
             image[middle_start:middle_start + middle_img_len] = middle_image[:middle_img_len]
             
-            # Soft masking around middle frame (allow blending)
-            blend_start = max(0, middle_frame_idx - frame_blend_width)
-            blend_end = min(length, middle_frame_idx + frame_blend_width)
-            mask[:, :, blend_start + 1:blend_end] = 0.0
+            # Only unmask the region where we actually have image data
+            mask[:, :, middle_start:middle_start + middle_img_len + 3] = 0.0
         
         # End frame at end
         if end_image is not None:
             end_start = max(0, length - frame_blend_width)
             end_img_start = max(0, end_image.shape[0] - (length - end_start))
-            image[end_start:] = end_image[end_img_start:]
-            mask[:, :, -end_image.shape[0]:] = 0.0
+            end_img_len = end_image.shape[0] - end_img_start
+            image[end_start:end_start + end_img_len] = end_image[end_img_start:]
+            # Unmask only where we have actual image data (with +3 buffer for latent encoding)
+            mask[:, :, end_start:min(length, end_start + end_img_len + 3)] = 0.0
         
         # Encode image to latent space
         concat_latent_image = vae.encode(image[:, :, :, :3])
