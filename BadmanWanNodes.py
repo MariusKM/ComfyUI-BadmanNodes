@@ -1,9 +1,60 @@
 import comfy.utils
 import comfy.model_management
 import comfy.clip_vision
+import comfy.context_windows
 import torch
 import nodes
 from node_helpers import conditioning_set_values
+
+
+# Monkey patch to fix context window bug for WAN models with concat_latent_image
+_original_get_resized_cond = comfy.context_windows.IndexListContextHandler.get_resized_cond
+
+def _fixed_get_resized_cond(self, cond_in, x_in, window, device=None):
+    """Fixed version that properly subsets tensors in model_conds dictionary"""
+    if cond_in is None:
+        return None
+    
+    resized_cond = []
+    for actual_cond in cond_in:
+        resized_actual_cond = actual_cond.copy()
+        for key in actual_cond:
+            try:
+                cond_item = actual_cond[key]
+                if isinstance(cond_item, torch.Tensor):
+                    if self.dim < cond_item.ndim and cond_item.size(self.dim) == x_in.size(self.dim):
+                        actual_cond_item = window.get_tensor(cond_item)
+                        resized_actual_cond[key] = actual_cond_item.to(device)
+                    else:
+                        resized_actual_cond[key] = cond_item.to(device)
+                elif key == "control":
+                    resized_actual_cond[key] = self.prepare_control_objects(cond_item, device)
+                elif isinstance(cond_item, dict):
+                    new_cond_item = cond_item.copy()
+                    for cond_key, cond_value in new_cond_item.items():
+                        if isinstance(cond_value, torch.Tensor):
+                            # FIX: Changed from cond_value.ndim < self.dim to self.dim < cond_value.ndim
+                            # and from size(0) to size(self.dim) to match top-level tensor logic
+                            if self.dim < cond_value.ndim and cond_value.size(self.dim) == x_in.size(self.dim):
+                                new_cond_item[cond_key] = window.get_tensor(cond_value, device)
+                            else:
+                                new_cond_item[cond_key] = cond_value.to(device) if device else cond_value
+                        elif hasattr(cond_value, "cond") and isinstance(cond_value.cond, torch.Tensor):
+                            if self.dim < cond_value.cond.ndim and cond_value.cond.size(self.dim) == x_in.size(self.dim):
+                                new_cond_item[cond_key] = cond_value._copy_with(window.get_tensor(cond_value.cond, device))
+                        elif cond_key == "num_video_frames":
+                            new_cond_item[cond_key] = cond_value._copy_with(cond_value.cond)
+                            new_cond_item[cond_key].cond = window.context_length
+                    resized_actual_cond[key] = new_cond_item
+                else:
+                    resized_actual_cond[key] = cond_item
+            finally:
+                del cond_item
+        resized_cond.append(resized_actual_cond)
+    return resized_cond
+
+# Apply the patch
+comfy.context_windows.IndexListContextHandler.get_resized_cond = _fixed_get_resized_cond
 
 
 class WanThreeFrameToVideo:
@@ -106,10 +157,12 @@ class WanThreeFrameToVideo:
         # Encode image to latent space
         concat_latent_image = vae.encode(image[:, :, :, :3])
         
-        # Reshape mask to match latent dimensions
+        # Reshape mask to match latent dimensions with proper 4D structure for temporal processing
+        # mask goes from (1, 1, T*4, H, W) -> (1, T, 4, H, W) -> (1, 4, T, H, W)
         mask = mask.view(1, mask.shape[2] // 4, 4, mask.shape[3], mask.shape[4]).transpose(1, 2)
         
         # Apply to conditioning
+        # Note: When using context windows, these will be automatically subset by the context handler
         positive = conditioning_set_values(
             positive, {"concat_latent_image": concat_latent_image, "concat_mask": mask}
         )
