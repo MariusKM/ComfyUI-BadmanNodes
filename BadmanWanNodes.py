@@ -3,7 +3,7 @@ import comfy.model_management
 import comfy.clip_vision
 import torch
 import nodes
-from comfy.nodes import node_helpers
+from node_helpers import conditioning_set_values
 
 
 class WanThreeFrameToVideo:
@@ -110,10 +110,10 @@ class WanThreeFrameToVideo:
         mask = mask.view(1, mask.shape[2] // 4, 4, mask.shape[3], mask.shape[4]).transpose(1, 2)
         
         # Apply to conditioning
-        positive = node_helpers.conditioning_set_values(
+        positive = conditioning_set_values(
             positive, {"concat_latent_image": concat_latent_image, "concat_mask": mask}
         )
-        negative = node_helpers.conditioning_set_values(
+        negative = conditioning_set_values(
             negative, {"concat_latent_image": concat_latent_image, "concat_mask": mask}
         )
         
@@ -148,10 +148,10 @@ class WanThreeFrameToVideo:
                 clip_vision_output = clip_vision_end_image
         
         if clip_vision_output is not None:
-            positive = node_helpers.conditioning_set_values(
+            positive = conditioning_set_values(
                 positive, {"clip_vision_output": clip_vision_output}
             )
-            negative = node_helpers.conditioning_set_values(
+            negative = conditioning_set_values(
                 negative, {"clip_vision_output": clip_vision_output}
             )
         
