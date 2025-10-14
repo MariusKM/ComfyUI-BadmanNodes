@@ -11,7 +11,7 @@ from node_helpers import conditioning_set_values
 _original_get_resized_cond = comfy.context_windows.IndexListContextHandler.get_resized_cond
 
 def _fixed_get_resized_cond(self, cond_in, x_in, window, device=None):
-    """Fixed version that properly subsets tensors in model_conds dictionary"""
+ 
     if cond_in is None:
         return None
     
@@ -131,28 +131,55 @@ class WanThreeFrameToVideo:
         # Place keyframes with blend regions
         # Start frame at beginning
         if start_image is not None:
-            start_end = min(start_image.shape[0], frame_blend_width)
-            image[:start_end] = start_image[:start_end]
-            mask[:, :, :start_end + 3] = 0.0
+            # Repeat the last frame of start_image to fill the blend width region
+            actual_frames = min(start_image.shape[0], length)
+            blend_region_end = min(frame_blend_width, length)
+            
+            # Copy the actual frames we have
+            image[:actual_frames] = start_image[:actual_frames]
+            
+            # If we have fewer frames than blend width, repeat the last frame
+            if actual_frames < blend_region_end:
+                image[actual_frames:blend_region_end] = start_image[actual_frames-1:actual_frames].expand(blend_region_end - actual_frames, -1, -1, -1)
+            
+            # Unmask the entire blend region
+            mask[:, :, :blend_region_end + 3] = 0.0
         
         # Middle frame
         if middle_image is not None:
             middle_start = max(0, middle_frame_idx - frame_blend_width // 2)
             middle_end = min(length, middle_frame_idx + frame_blend_width // 2)
-            middle_img_len = min(middle_image.shape[0], middle_end - middle_start)
-            image[middle_start:middle_start + middle_img_len] = middle_image[:middle_img_len]
+            blend_region_len = middle_end - middle_start
+            actual_frames = min(middle_image.shape[0], blend_region_len)
             
-            # Only unmask the region where we actually have image data
-            mask[:, :, middle_start:middle_start + middle_img_len + 3] = 0.0
+            # Copy the actual frames we have
+            image[middle_start:middle_start + actual_frames] = middle_image[:actual_frames]
+            
+            # If we have fewer frames than blend width, repeat the last frame
+            if actual_frames < blend_region_len:
+                image[middle_start + actual_frames:middle_end] = middle_image[actual_frames-1:actual_frames].expand(blend_region_len - actual_frames, -1, -1, -1)
+            
+            # Unmask the entire blend region
+            mask[:, :, middle_start:min(length, middle_end + 3)] = 0.0
         
         # End frame at end
         if end_image is not None:
             end_start = max(0, length - frame_blend_width)
-            end_img_start = max(0, end_image.shape[0] - (length - end_start))
-            end_img_len = end_image.shape[0] - end_img_start
-            image[end_start:end_start + end_img_len] = end_image[end_img_start:]
-            # Unmask only where we have actual image data (with +3 buffer for latent encoding)
-            mask[:, :, end_start:min(length, end_start + end_img_len + 3)] = 0.0
+            blend_region_len = length - end_start
+            actual_frames = min(end_image.shape[0], blend_region_len)
+            
+            # For end frame, we want to use the LAST frame(s) of the provided image
+            # If end_image has multiple frames, use the last ones
+            if end_image.shape[0] >= actual_frames:
+                image[end_start:end_start + actual_frames] = end_image[-actual_frames:]
+            else:
+                # If we have fewer frames than needed, place what we have and repeat the last one
+                image[end_start:end_start + end_image.shape[0]] = end_image
+                if end_image.shape[0] < blend_region_len:
+                    image[end_start + end_image.shape[0]:length] = end_image[-1:].expand(blend_region_len - end_image.shape[0], -1, -1, -1)
+            
+            # Unmask the entire blend region
+            mask[:, :, end_start:length] = 0.0
         
         # Encode image to latent space
         concat_latent_image = vae.encode(image[:, :, :, :3])
