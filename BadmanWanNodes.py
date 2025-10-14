@@ -131,19 +131,20 @@ class WanThreeFrameToVideo:
         # Place keyframes with blend regions
         # Start frame at beginning
         if start_image is not None:
-            # Repeat the last frame of start_image to fill the blend width region
             actual_frames = min(start_image.shape[0], length)
             blend_region_end = min(frame_blend_width, length)
             
             # Copy the actual frames we have
             image[:actual_frames] = start_image[:actual_frames]
             
-            # If we have fewer frames than blend width, repeat the last frame
+            # If we have fewer frames than blend width, repeat the last frame for blending
             if actual_frames < blend_region_end:
                 image[actual_frames:blend_region_end] = start_image[actual_frames-1:actual_frames].expand(blend_region_end - actual_frames, -1, -1, -1)
             
-            # Unmask the entire blend region
-            mask[:, :, :blend_region_end + 3] = 0.0
+            # Create gradient mask: 0.0 (preserve) at keyframe → 1.0 (generate) at blend edge
+            for i in range(blend_region_end):
+                blend_factor = i / max(blend_region_end - 1, 1)  # 0.0 to 1.0
+                mask[:, :, i] = blend_factor
         
         # Middle frame
         if middle_image is not None:
@@ -152,15 +153,19 @@ class WanThreeFrameToVideo:
             blend_region_len = middle_end - middle_start
             actual_frames = min(middle_image.shape[0], blend_region_len)
             
-            # Copy the actual frames we have
-            image[middle_start:middle_start + actual_frames] = middle_image[:actual_frames]
+            # Place keyframe at the center of the blend region
+            center_offset = (blend_region_len - actual_frames) // 2
+            image[middle_start + center_offset:middle_start + center_offset + actual_frames] = middle_image[:actual_frames]
             
-            # If we have fewer frames than blend width, repeat the last frame
-            if actual_frames < blend_region_len:
-                image[middle_start + actual_frames:middle_end] = middle_image[actual_frames-1:actual_frames].expand(blend_region_len - actual_frames, -1, -1, -1)
+            # If single frame, repeat it across blend region for smooth blending
+            if actual_frames == 1:
+                image[middle_start:middle_end] = middle_image[0:1].expand(blend_region_len, -1, -1, -1)
             
-            # Unmask the entire blend region
-            mask[:, :, middle_start:min(length, middle_end + 3)] = 0.0
+            # Create V-shaped gradient mask: 1.0 at edges → 0.0 at center → 1.0 at edges
+            for i in range(blend_region_len):
+                distance_from_center = abs(i - blend_region_len // 2)
+                blend_factor = distance_from_center / max(blend_region_len // 2, 1)  # 0.0 at center, 1.0 at edges
+                mask[:, :, middle_start + i] = min(mask[:, :, middle_start + i].item(), blend_factor)
         
         # End frame at end
         if end_image is not None:
@@ -168,18 +173,18 @@ class WanThreeFrameToVideo:
             blend_region_len = length - end_start
             actual_frames = min(end_image.shape[0], blend_region_len)
             
-            # For end frame, we want to use the LAST frame(s) of the provided image
-            # If end_image has multiple frames, use the last ones
-            if end_image.shape[0] >= actual_frames:
-                image[end_start:end_start + actual_frames] = end_image[-actual_frames:]
+            # Use the last frame(s) and place at the end
+            if actual_frames == 1:
+                # Single frame: repeat across blend region
+                image[end_start:length] = end_image[-1:].expand(blend_region_len, -1, -1, -1)
             else:
-                # If we have fewer frames than needed, place what we have and repeat the last one
-                image[end_start:end_start + end_image.shape[0]] = end_image
-                if end_image.shape[0] < blend_region_len:
-                    image[end_start + end_image.shape[0]:length] = end_image[-1:].expand(blend_region_len - end_image.shape[0], -1, -1, -1)
+                # Multiple frames: use the last ones
+                image[length - actual_frames:length] = end_image[-actual_frames:]
             
-            # Unmask the entire blend region
-            mask[:, :, end_start:length] = 0.0
+            # Create gradient mask: 1.0 (generate) at blend start → 0.0 (preserve) at keyframe
+            for i in range(blend_region_len):
+                blend_factor = 1.0 - (i / max(blend_region_len - 1, 1))  # 1.0 to 0.0
+                mask[:, :, end_start + i] = min(mask[:, :, end_start + i].item(), blend_factor)
         
         # Encode image to latent space
         concat_latent_image = vae.encode(image[:, :, :, :3])
