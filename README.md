@@ -24,7 +24,9 @@ interrogation
 
 **Select String from List (Badman)**: Selects a specific String from a String List output and forwards this to the output. Can be used to target a specific String when loading prompts from files or from a multi image BLIP interrogator.
 
-**Inject Latent Noise Masked (Badman)**: Injects noise into latent space with mask control. High mask values receive more noise, low values receive less. Supports multiple blend modes (replace, add, multiply).
+**Inject Latent Noise Masked (Badman)**: Injects noise into latent space with mask control. High mask values receive more noise, low values receive less. Supports multiple blend modes (replace, add, multiply) and mask inversion.
+
+**WAN Three Frame To Video**: Generates video from 3 keyframes (start, middle, end) with proper masking for smooth transitions. Supports adjustable middle frame positioning, configurable frame blend width for smooth transitions, and CLIP vision output concatenation for enhanced conditioning.
 
 
 ## TODO

@@ -5,6 +5,7 @@ from .BadmanConditioning import *
 from .BadmanColorTransfer import *
 from .BadmanWildCardProcessor import *
 from .BadmanLatentNoiseMask import *
+from .BadmanWanNodes import *
 
 
 NODE_CLASS_MAPPINGS = {
@@ -26,6 +27,7 @@ NODE_CLASS_MAPPINGS = {
     "BadmanDilateErodeMask" : DilateErodeMask,
     "BadmanStringToInteger" : StringToInteger,
     "BadmanInjectLatentNoiseMasked" : InjectLatentNoiseMasked,
+    "BadmanWanThreeFrameToVideo" : WanThreeFrameToVideo,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -46,4 +48,5 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "BadmanDilateErodeMask" : "Dilate Erode Mask (Badman)",
     "BadmanStringToInteger" : "StringToInteger (Badman)",
     "BadmanInjectLatentNoiseMasked" : "Inject Latent Noise Masked (Badman)",
+    "BadmanWanThreeFrameToVideo" : "WAN Three Frame To Video (Badman)",
 }

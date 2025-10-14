@@ -12,13 +12,14 @@ class InjectLatentNoiseMasked:
                     "noise_strength": ("FLOAT", {"default": 1.0, "min": -20.0, "max": 20.0, "step":0.01, "round": 0.01}),
                     "normalize": (["false", "true"], {"default": "false"}),
                     "blend_mode": (["replace", "add", "multiply"], {"default": "replace"}),
+                    "invert_mask": (["false", "true"], {"default": "false"}),
                 }}
 
     RETURN_TYPES = ("LATENT",)
     FUNCTION = "execute"
     CATEGORY = "Badman"
 
-    def execute(self, latent, mask, noise_seed, noise_strength, normalize="false", blend_mode="replace"):
+    def execute(self, latent, mask, noise_seed, noise_strength, normalize="false", blend_mode="replace", invert_mask="false"):
         torch.manual_seed(noise_seed)
         noise_latent = latent.copy()
         original_samples = noise_latent["samples"].clone()
@@ -40,6 +41,10 @@ class InjectLatentNoiseMasked:
             mask = mask.repeat((original_samples.shape[0] - 1) // mask.shape[0] + 1, 1, 1, 1)[:original_samples.shape[0]]
         elif mask.shape[0] > original_samples.shape[0]:
             mask = mask[:original_samples.shape[0]]
+        
+        # Invert mask if requested
+        if invert_mask == "true":
+            mask = 1.0 - mask
 
         # Apply noise based on blend mode
         if blend_mode == "replace":
