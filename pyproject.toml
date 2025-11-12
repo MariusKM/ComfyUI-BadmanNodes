@@ -1,7 +1,7 @@
 [project]
 name = "comfyui-badmannodes"
 description = "Utility nodes including ImageBlend, Math, Strings, Color tools, Wildcard Processor, Latent Noise Mask, and WAN Three Frame To Video for keyframe-based video generation"
-version = "1.2.1"
+version = "1.2.2"
 license = "LICENSE"
 
 [project.urls]

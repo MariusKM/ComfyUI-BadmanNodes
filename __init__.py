@@ -6,6 +6,7 @@ from .BadmanColorTransfer import *
 from .BadmanWildCardProcessor import *
 from .BadmanLatentNoiseMask import *
 from .BadmanWanNodes import *
+from .BadmanWanOutpaintNodes import *
 
 
 NODE_CLASS_MAPPINGS = {
@@ -28,6 +29,8 @@ NODE_CLASS_MAPPINGS = {
     "BadmanStringToInteger" : StringToInteger,
     "BadmanInjectLatentNoiseMasked" : InjectLatentNoiseMasked,
     "BadmanWanThreeFrameToVideo" : WanThreeFrameToVideo,
+    "BadmanWanOutpaintFrameCalculator" : WanOutpaintFrameCalculator,
+    "BadmanSelectFromList" : BadmanSelectFromList,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -49,4 +52,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "BadmanStringToInteger" : "StringToInteger (Badman)",
     "BadmanInjectLatentNoiseMasked" : "Inject Latent Noise Masked (Badman)",
     "BadmanWanThreeFrameToVideo" : "WAN Three Frame To Video (Badman)",
+    "BadmanWanOutpaintFrameCalculator" : "WAN Outpaint Frame Calculator (Badman)",
+    "BadmanSelectFromList" : "Select from Any List (Badman)",
 }
