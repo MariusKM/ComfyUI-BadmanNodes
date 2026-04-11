@@ -7,6 +7,7 @@ from .BadmanWildCardProcessor import *
 from .BadmanLatentNoiseMask import *
 from .BadmanWanNodes import *
 from .BadmanWanOutpaintNodes import *
+from .BadmanPromptFileLoader import BadmanPromptFileImageLoader
 
 
 NODE_CLASS_MAPPINGS = {
@@ -31,6 +32,7 @@ NODE_CLASS_MAPPINGS = {
     "BadmanWanThreeFrameToVideo" : WanThreeFrameToVideo,
     "BadmanWanOutpaintFrameCalculator" : WanOutpaintFrameCalculator,
     "BadmanSelectFromList" : BadmanSelectFromList,
+    "BadmanPromptFileImageLoader" : BadmanPromptFileImageLoader,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -54,4 +56,5 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "BadmanWanThreeFrameToVideo" : "WAN Three Frame To Video (Badman)",
     "BadmanWanOutpaintFrameCalculator" : "WAN Outpaint Frame Calculator (Badman)",
     "BadmanSelectFromList" : "Select from Any List (Badman)",
+    "BadmanPromptFileImageLoader" : "Prompt File Image Loader (Badman)",
 }
