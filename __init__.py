@@ -8,6 +8,8 @@ from .BadmanLatentNoiseMask import *
 from .BadmanWanNodes import *
 from .BadmanWanOutpaintNodes import *
 from .BadmanPromptFileLoader import BadmanPromptFileImageLoader
+from .BadmanColorMatch import ColorMatchNode, ColorMatchCombinePresets
+from .BadmanChromaClean import ChromaCleanNode
 
 
 NODE_CLASS_MAPPINGS = {
@@ -33,7 +35,21 @@ NODE_CLASS_MAPPINGS = {
     "BadmanWanOutpaintFrameCalculator" : WanOutpaintFrameCalculator,
     "BadmanSelectFromList" : BadmanSelectFromList,
     "BadmanPromptFileImageLoader" : BadmanPromptFileImageLoader,
+    "BadmanColorMatch" : ColorMatchNode,
+    "BadmanColorMatchCombine" : ColorMatchCombinePresets,
+    "BadmanChromaClean" : ChromaCleanNode,
 }
+
+# Tiled RMBG depends on the comfyui-rmbg pack. Register it only if that pack
+# is installed — other nodes in this pack should still load regardless.
+try:
+    from .BadmanTiledRMBG import TiledRMBGNode
+    NODE_CLASS_MAPPINGS["BadmanTiledRMBG"] = TiledRMBGNode
+    print("[Badman] Tiled Background Removal (Badman) registered")
+except Exception as _e:
+    import traceback
+    print(f"[Badman] Tiled Background Removal NOT registered: {type(_e).__name__}: {_e}")
+    traceback.print_exc()
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "Badman_Blend": "ImageBlend(Badman)",
@@ -43,7 +59,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "Badman_String": "String (Badman)",
     "Badman_Concat_String": "Concat String (Badman)",
     "Badman_Print": "Print (Badman)",
-    "Badman_IO": "IO Config (Badman)",
+    "BadmanIO": "IO Config (Badman)",
     "BadmanIntUtil": "Int Math (Badman)",
     "BadmanStringSelect": "Select String from List (Badman)",
     "BadmanBrightness" : "Image Brightness Adjust (Badman)",
@@ -57,4 +73,12 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "BadmanWanOutpaintFrameCalculator" : "WAN Outpaint Frame Calculator (Badman)",
     "BadmanSelectFromList" : "Select from Any List (Badman)",
     "BadmanPromptFileImageLoader" : "Prompt File Image Loader (Badman)",
+    "BadmanColorMatch" : "Color Match (Badman)",
+    "BadmanColorMatchCombine" : "Color Match Combine Presets (Badman)",
+    "BadmanChromaClean" : "Chroma Clean (Badman)",
+    "BadmanTiledRMBG" : "Tiled Background Removal (Badman)",
 }
+
+WEB_DIRECTORY = "./web"
+
+__all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS", "WEB_DIRECTORY"]
